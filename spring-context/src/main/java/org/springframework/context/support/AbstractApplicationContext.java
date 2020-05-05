@@ -532,7 +532,6 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 			/*
 			   重要程度：5
-
 			  1、创建BeanFactory对象
 			* 2、xml解析
 			* 	传统标签解析：bean、import等
