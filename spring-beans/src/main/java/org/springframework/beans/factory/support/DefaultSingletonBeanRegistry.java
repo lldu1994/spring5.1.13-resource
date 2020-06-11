@@ -132,8 +132,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 */
 	protected void addSingleton(String beanName, Object singletonObject) {
 		synchronized (this.singletonObjects) {
+			//一级缓存
 			this.singletonObjects.put(beanName, singletonObject);
+			// 三级缓存
 			this.singletonFactories.remove(beanName);
+			//二级缓存
 			this.earlySingletonObjects.remove(beanName);
 			this.registeredSingletons.add(beanName);
 		}
@@ -212,6 +215,8 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				if (logger.isDebugEnabled()) {
 					logger.debug("Creating shared instance of singleton bean '" + beanName + "'");
 				}
+				// 判断对应的beanName是不是正在进行实例化 如果没有进行的实力化的话保存到set集合singletonsCurrentlyInCreation中
+				//保存在singletonsCurrentlyInCreation 的beanName 就是正在实例化的，bean的实例化还没有做完
 				beforeSingletonCreation(beanName);
 				boolean newSingleton = false;
 				boolean recordSuppressedExceptions = (this.suppressedExceptions == null);
@@ -219,6 +224,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					this.suppressedExceptions = new LinkedHashSet<>();
 				}
 				try {
+					//完成bean的实例化
 					singletonObject = singletonFactory.getObject();
 					newSingleton = true;
 				}
@@ -242,9 +248,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					if (recordSuppressedExceptions) {
 						this.suppressedExceptions = null;
 					}
+					//bean创建完成后singletonsCurrentlyInCreation 要删除该bean
 					afterSingletonCreation(beanName);
 				}
 				if (newSingleton) {
+					//创建对象成功时，把对象缓存到singletonObjects缓存中，bean创建完成时放入一级缓存
 					addSingleton(beanName, singletonObject);
 				}
 			}
@@ -335,6 +343,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * @see #isSingletonCurrentlyInCreation
 	 */
 	protected void beforeSingletonCreation(String beanName) {
+		//把beanName 添加到singletonsCurrentlyInCreation set容器中，在这个集合里面的bean都是正在实例化的bean
 		if (!this.inCreationCheckExclusions.contains(beanName) && !this.singletonsCurrentlyInCreation.add(beanName)) {
 			throw new BeanCurrentlyInCreationException(beanName);
 		}
