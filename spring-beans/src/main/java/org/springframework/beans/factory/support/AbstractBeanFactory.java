@@ -329,6 +329,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 							throw ex;
 						}
 					});
+					//该方法是beanFactroy接口入口
 					bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 				}
 
