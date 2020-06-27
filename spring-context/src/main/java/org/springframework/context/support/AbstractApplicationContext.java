@@ -579,7 +579,15 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Check for listener beans and register them.
 				registerListeners();
-
+				/**
+				 * 这个方法是spring中最重要的方法，没有之一
+				 * 所以这个方法一定要理解要具体看
+				 *
+				 * 1：bena 实例化过程
+				 * 2：ioc
+				 * 4 beanPostProcessor的执行
+				 * 5：aop的入口
+				 */
 				// Instantiate all remaining (non-lazy-init) singletons.
 				finishBeanFactoryInitialization(beanFactory);
 
