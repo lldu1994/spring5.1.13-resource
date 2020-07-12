@@ -234,8 +234,12 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 	@Override
 	protected Object doGetTransaction() {
+		//管理connection对象，创建回滚点，按照回滚点回滚，释放回滚点
 		DataSourceTransactionObject txObject = new DataSourceTransactionObject();
+
+		//DataSourceTransactionManager 默认是允许嵌套事务的
 		txObject.setSavepointAllowed(isNestedTransactionAllowed());
+		//obtionDataSource() 获取数据源对象，其实就是数据库连接块对象
 		ConnectionHolder conHolder =
 				(ConnectionHolder) TransactionSynchronizationManager.getResource(obtainDataSource());
 		txObject.setConnectionHolder(conHolder, false);
@@ -257,18 +261,22 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 		Connection con = null;
 
 		try {
+			//如果没有数据库连接
 			if (!txObject.hasConnectionHolder() ||
 					txObject.getConnectionHolder().isSynchronizedWithTransaction()) {
+				//从数据库里面获取连接
 				Connection newCon = obtainDataSource().getConnection();
 				if (logger.isDebugEnabled()) {
 					logger.debug("Acquired Connection [" + newCon + "] for JDBC transaction");
 				}
+				//把连接包装成ConnectionHolder,然后设置到事务对象中
 				txObject.setConnectionHolder(new ConnectionHolder(newCon), true);
 			}
 
 			txObject.getConnectionHolder().setSynchronizedWithTransaction(true);
 			con = txObject.getConnectionHolder().getConnection();
 
+			//从数据库连接中获取隔离级别
 			Integer previousIsolationLevel = DataSourceUtils.prepareConnectionForTransaction(con, definition);
 			txObject.setPreviousIsolationLevel(previousIsolationLevel);
 
@@ -280,10 +288,14 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 				if (logger.isDebugEnabled()) {
 					logger.debug("Switching JDBC Connection [" + con + "] to manual commit");
 				}
+				//关闭连接的自动提交，其实这步就是开启了事务
 				con.setAutoCommit(false);
 			}
-
+			//可看可不看
+			//设置只读事务，从这一点设置的时间点开始（时间点）到这个事务结束的过程中，其他事务所提交的数据
 			prepareTransactionalConnection(con, definition);
+
+			//自己提交关闭了，就说明已经开启事务了，事务是活动的
 			txObject.getConnectionHolder().setTransactionActive(true);
 
 			int timeout = determineTimeout(definition);
@@ -293,6 +305,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 			// Bind the connection holder to the thread.
 			if (txObject.isNewConnectionHolder()) {
+				//如果是新创建的事务，则建立当前线程和数据库连接的关系
 				TransactionSynchronizationManager.bindResource(obtainDataSource(), txObject.getConnectionHolder());
 			}
 		}
